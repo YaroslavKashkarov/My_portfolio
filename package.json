@@ -17,8 +17,5 @@
     "postcss-discard-comments": "^5.1.2",
     "sass": "^1.59.3",
     "sort-css-media-queries": "^2.1.1"
-  },
-  "dependencies": {
-    "webpack": "^5.91.0"
   }
 }

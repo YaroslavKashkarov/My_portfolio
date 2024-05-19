@@ -86,10 +86,7 @@ section {
   display: flex;
   align-items: center;
   padding: 0 9%;
-
-  // TODO fixing img background
-  background-image: url('assets/images/home.jpg');
-
+  background: url('/assets/images/home.jpg') no-repeat;
   background-size: cover;
   background-position: center;
 }
@@ -256,7 +253,7 @@ section {
   width: 100%;
 }
 
-.hone-imgHover {
+.home-imgHover {
   position: absolute;
   top: 0;
   right: 0;
@@ -266,7 +263,7 @@ section {
   transition: 3s;
 }
 
-.hone-imgHover:hover {
+.home-imgHover:hover {
   background: var(--bg-color);
   opacity: 0.8;
 }
@@ -757,7 +754,7 @@ section:nth-child(odd) .animate.scroll,
 
 @media (max-width: 850px) {
   .animate.home-img {
-    width: 55%;
+    width: 100%;
   }
 }
 @media (max-width: 768px) {

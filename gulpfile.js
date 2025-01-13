@@ -1,3 +1,19 @@
+const originalWrite = process.stderr.write // Перехоплюємо потоки stdout та stderr
+
+process.stderr.write = function (chunk, ...args) {
+  const ignoreMessages = [
+    'The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0',
+    '[DEP0180] DeprecationWarning: fs.Stats constructor is deprecated'
+  ]
+
+  // Ігноруємо повідомлення, які містять зазначені фрази
+  if (ignoreMessages.some((msg) => chunk.toString().includes(msg))) {
+    return // Нічого не робимо
+  }
+
+  return originalWrite.call(process.stderr, chunk, ...args) // Викликаємо стандартний метод для інших повідомлень
+}
+
 const { task, series, parallel, src, dest, watch } = require('gulp')
 const sass = require('gulp-sass')(require('sass'))
 const replace = require('gulp-replace')
@@ -15,12 +31,12 @@ const pug = require('gulp-pug')
 const option = process.argv[3]
 
 const PATH = {
-  scssFolder: './src/scss/',
-  scssAllFiles: './src/scss/**/*.scss',
-  scssRootFile: './src/scss/style.scss',
-  pugFolder: './src/templates/',
-  pugAllFiles: './src/templates/**/*.pug',
-  pugRootFile: './src/templates/index.pug',
+  scssFolder: './assets/scss/',
+  scssAllFiles: ['./assets/scss/**/*.scss'],
+  scssRootFile: './assets/scss/style.scss',
+  pugFolder: './assets/templates/',
+  pugAllFiles: './assets/templates/**/*.pug',
+  pugRootFile: './assets/templates/index.pug',
   cssFolder: './assets/css/',
   cssAllFiles: './assets/css/*.css',
   cssRootFile: './assets/css/style.css',
@@ -31,14 +47,13 @@ const PATH = {
   imgFolder: './assets/images/'
 }
 
-const SEARCH_IMAGE_REGEXP = /url\(['"]?.*\/images\/(.*?)\.(png|jpg|gif|webp|svg)['"]?\)/g;
-const REPLACEMENT_IMAGE_PATH = "url(../images/$1.$2)";
+const SEARCH_IMAGE_REGEXP = /url\(['"]?.*\/images\/(.*?)\.(png|jpg|gif|webp|svg)['"]?\)/g
+const REPLACEMENT_IMAGE_PATH = 'url(../images/$1.$2)'
 
 const PLUGINS = [
   dc({ discardComments: true }),
   autoprefixer({
-    overrideBrowserslist: ['last 5 versions', '> 0.1%'],
-    cascade: true
+    overrideBrowserslist: ['last 5 versions', '> 0.1%']
   }),
   mqpacker({ sort: sortCSSmq })
 ]
@@ -47,7 +62,6 @@ function compileScss() {
   return src(PATH.scssRootFile)
     .pipe(sass().on('error', sass.logError))
     .pipe(postcss(PLUGINS))
-    .pipe(csscomb())
     .pipe(replace(SEARCH_IMAGE_REGEXP, REPLACEMENT_IMAGE_PATH))
     .pipe(dest(PATH.cssFolder))
     .pipe(browserSync.stream())
@@ -58,7 +72,6 @@ function compileScssMin() {
 
   return src(PATH.scssRootFile)
     .pipe(sass().on('error', sass.logError))
-    .pipe(csscomb())
     .pipe(replace(SEARCH_IMAGE_REGEXP, REPLACEMENT_IMAGE_PATH))
     .pipe(postcss(pluginsForMinify))
     .pipe(rename({ suffix: '.min' }))
@@ -101,7 +114,7 @@ async function sync() {
 
 function watchFiles() {
   serverInit()
-  if (!option) watch(PATH.scssAllFiles, series(compileScss))
+  if (!option) watch(PATH.scssAllFiles, series(compileScss, compileScssMin))
   if (option === '--dev') watch(PATH.scssAllFiles, series(compileScssDev))
   if (option === '--css') watch(PATH.cssAllFiles, sync)
   watch(PATH.htmlAllFiles, sync)
@@ -147,8 +160,8 @@ function createStructure() {
   )
 }
 
-task('comb', series(comb))
-task('scss', series(compileScss, compileScssMin))
+task('comb', series(comb, compileScss, compileScssMin))
+task('scss', series(comb, compileScss, compileScssMin))
 task('dev', series(compileScssDev))
 task('min', series(compileScssMin))
 task('pug', series(compilePug))
